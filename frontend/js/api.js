@@ -70,13 +70,13 @@ const API = (() => {
     return r.json();
   }
 
-  async function _post(url, body) {
+  async function _post(url, body, timeoutMs) {
     _logTokenOnce();
     const r = await _fetchWithTimeout(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ..._authHeaders() },
       body: JSON.stringify(body),
-    });
+    }, timeoutMs);
     if (!r.ok) {
       _logAuthFailure(url, r.status);
       const t = await r.text().catch(() => '');
@@ -192,7 +192,7 @@ const API = (() => {
       device: o.device || 'auto',
       mode: o.mode || 'mid',
       chunks: o.chunks || 5,
-    });
+    }, 120000);
   }
   async function stopTask(taskId) { return _post('/api/task/' + encodeURIComponent(taskId) + '/stop', {}); }
 

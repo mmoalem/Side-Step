@@ -44,10 +44,15 @@ const AppState = (() => {
     document.addEventListener("appstate:gpu", (e) => {
       const g = e.detail;
       const pct = g.vram_total_mb > 0 ? (g.vram_used_mb / g.vram_total_mb) * 100 : 0;
-      // Topbar
+      // Topbar (show all GPUs when multiple are present)
       const topName = document.getElementById("topbar-gpu-name");
       const topVram = document.getElementById("topbar-gpu-vram");
-      if (topName) topName.textContent = "GPU: " + g.name;
+      const gpus = g.gpus || [];
+      if (gpus.length > 1 && topName) {
+        topName.textContent = gpus.map((d, i) => "GPU " + i + ": " + d.name).join(" | ");
+      } else if (topName) {
+        topName.textContent = "GPU: " + g.name;
+      }
       if (topVram) topVram.textContent = (g.vram_used_mb / 1024).toFixed(1) + " / " + (g.vram_total_mb / 1024).toFixed(1) + " GB";
       // Monitor panel
       const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };

@@ -435,7 +435,7 @@ def _pass1_light(
                         "filename": af.name,
                         "caption": caption,
                         "lyrics": lyrics,
-                        "duration": sm.get("duration", 0),
+                        "duration": int(sm.get("duration") or 0),
                         "bpm": sm.get("bpm"),
                         "keyscale": sm.get("keyscale", ""),
                         "timesignature": sm.get("timesignature", ""),

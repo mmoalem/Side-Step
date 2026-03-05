@@ -91,6 +91,9 @@ def _step_source(a: dict) -> None:
     )
 
     a["dataset_json"] = detect_existing_json(a["audio_dir"])
+    if not a["dataset_json"]:
+        # No dataset.json found inside the audio folder — offer to specify one
+        a["dataset_json"] = _ask_dataset_json(default=None)
     show_sidecar_summary(a["audio_dir"])
 
 
@@ -361,6 +364,7 @@ def wizard_preprocess(preset: dict | None = None) -> argparse.Namespace:
         gradient_checkpointing=True,
         offload_encoder=False,
         preprocess=True,
+        preprocess_only=True,
         audio_dir=answers.get("audio_dir"),
         dataset_json=answers.get("dataset_json"),
         tensor_output=answers.get("tensor_output"),

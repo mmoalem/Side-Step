@@ -943,7 +943,6 @@ def create_app(token: str | None = None, port: int = 8770) -> FastAPI:
     async def export_comfyui(body: Dict[str, Any]):
         """Export an adapter directory to ComfyUI-compatible safetensors."""
         import asyncio
-        from sidestep_engine.gui.file_ops import is_path_allowed
 
         adapter_dir = str(body.get("adapter_dir") or "").strip()
         output = body.get("output") or None
@@ -953,8 +952,6 @@ def create_app(token: str | None = None, port: int = 8770) -> FastAPI:
 
         if not adapter_dir:
             return JSONResponse({"ok": False, "error": "No adapter_dir specified"}, status_code=400)
-        if not is_path_allowed(adapter_dir):
-            return JSONResponse({"ok": False, "error": "Path not allowed"}, status_code=403)
 
         resolved = str(_resolve_server_path(adapter_dir))
 

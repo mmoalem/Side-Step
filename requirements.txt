@@ -20,6 +20,9 @@ accelerate>=1.12.0
 safetensors
 einops>=0.8.1
 
+# ── Vision (required by transformers AutoVideoProcessor) ─────
+torchvision
+
 # ── Audio loading & normalization ─────────────────────────────
 torchcodec>=0.9.1
 soundfile>=0.13.1

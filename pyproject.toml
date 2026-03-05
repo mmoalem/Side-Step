@@ -1,6 +1,6 @@
 [project]
 name = "side-step"
-version = "1.0.0-beta"
+version = "1.0.1"
 description = "Standalone training toolkit for ACE-Step 1.5 models -- Multiadapter fine-tuning"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -9,11 +9,14 @@ dependencies = [
     # ── PyTorch (CUDA 12.8 wheels for Windows and Linux) ─────────────
     "torch==2.7.1+cu128; sys_platform == 'win32'",
     "torchaudio==2.7.1+cu128; sys_platform == 'win32'",
+    "torchvision==0.22.1+cu128; sys_platform == 'win32'",
     "torch==2.10.0+cu128; sys_platform == 'linux'",
     "torchaudio==2.10.0+cu128; sys_platform == 'linux'",
+    "torchvision==0.25.0+cu128; sys_platform == 'linux'",
     # macOS (CPU / MPS)
     "torch>=2.9.1; sys_platform == 'darwin' and platform_machine == 'arm64'",
     "torchaudio>=2.9.1; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "torchvision>=0.24.1; sys_platform == 'darwin' and platform_machine == 'arm64'",
     # ── Core ML dependencies ─────────────────────────────────────────
     "transformers>=4.51.0,<4.58.0",
     "diffusers",
@@ -84,6 +87,9 @@ torch = [
 torchaudio = [
     { index = "pytorch-cu128", marker = "sys_platform == 'win32' or sys_platform == 'linux'" },
 ]
+torchvision = [
+    { index = "pytorch-cu128", marker = "sys_platform == 'win32' or sys_platform == 'linux'" },
+]
 # Prebuilt flash-attn wheels -- same repos ACE-Step uses.
 # No CUDA toolkit needed, no 20-min compile.  Just a wheel download.
 flash-attn = [
@@ -94,6 +100,11 @@ flash-attn = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
 
 [tool.hatch.metadata]
 allow-direct-references = true

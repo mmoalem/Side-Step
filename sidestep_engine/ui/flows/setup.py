@@ -28,9 +28,15 @@ logger = logging.getLogger(__name__)
 
 def _smart_checkpoint_default() -> str:
     """Pick a sensible default checkpoint path based on context."""
-    for rel in ("./checkpoints", "../ACE-Step-1.5/checkpoints"):
-        if Path(rel).is_dir():
-            return native_path(rel)
+    # Absolute project-root path (works even when CWD != project root)
+    _project_root = Path(__file__).resolve().parent.parent.parent
+    for candidate in (
+        _project_root / "checkpoints",
+        Path("./checkpoints"),
+        Path("../ACE-Step-1.5/checkpoints"),
+    ):
+        if candidate.is_dir():
+            return native_path(str(candidate.resolve()))
     return native_path("./checkpoints")
 
 

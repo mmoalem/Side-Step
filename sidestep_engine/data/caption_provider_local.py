@@ -167,7 +167,7 @@ def generate_caption(
     except ImportError as exc:
         logger.error(
             "Missing dependency for local captioning: %s. "
-            "Install with: pip install transformers bitsandbytes qwen-omni-utils",
+            "Install with: pip install transformers torchvision bitsandbytes qwen-omni-utils",
             exc,
         )
         return None

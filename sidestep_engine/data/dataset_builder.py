@@ -26,11 +26,32 @@ from sidestep_engine.data.preprocess_discovery import AUDIO_EXTENSIONS
 logger = logging.getLogger(__name__)
 
 
+# Canonical field names plus common aliases / typos.
+# Aliases are mapped to their canonical name by _SIDECAR_ALIASES.
 _KNOWN_SIDECAR_KEYS = frozenset({
     "caption", "genre", "bpm", "key", "signature", "lyrics",
     "tags", "custom_tag", "trigger", "is_instrumental",
-    "repeat", "prompt_override",
+    "repeat", "prompt_override", "duration",
+    # Aliases
+    "keyscale", "scale",
+    "timesignature", "time_signature", "sig",
+    "language", "lang",
+    "tempo",
+    "repeats",
 })
+
+# Maps alias -> canonical name.  Keys not listed here are already canonical.
+_SIDECAR_ALIASES: dict[str, str] = {
+    "keyscale": "key",
+    "scale": "key",
+    "timesignature": "signature",
+    "time_signature": "signature",
+    "sig": "signature",
+    "language": "language",
+    "lang": "language",
+    "tempo": "bpm",
+    "repeats": "repeat",
+}
 
 
 def parse_txt_metadata(path: Path) -> Dict[str, str]:
@@ -73,7 +94,7 @@ def parse_txt_metadata(path: Path) -> Dict[str, str]:
                 if current_key is not None:
                     meta[current_key] = "\n".join(current_lines).strip()
                 value = lstripped.split(":", 1)[1].strip()
-                current_key = candidate_key
+                current_key = _SIDECAR_ALIASES.get(candidate_key, candidate_key)
                 current_lines = [value] if value else []
                 continue
 

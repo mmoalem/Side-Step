@@ -26,7 +26,7 @@ import os
 import sys
 from pathlib import Path
 
-SIDESTEP_VERSION = "1.0.0-beta"
+SIDESTEP_VERSION = "1.0.1"
 
 _BANNER = r"""
   ███████ ██ ██████  ███████       ███████ ████████ ███████ ██████

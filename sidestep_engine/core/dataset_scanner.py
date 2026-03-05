@@ -55,7 +55,7 @@ def pt_total_duration(folder: Path) -> int:
             dur = 0
             meta = data.get("metadata")
             if isinstance(meta, dict):
-                dur = meta.get("duration", 0)
+                dur = meta.get("duration") or 0
             if not dur and "target_latents" in data:
                 T = data["target_latents"].shape[0]
                 dur = T / LATENT_FPS

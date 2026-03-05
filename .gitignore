@@ -20,6 +20,7 @@ node_modules/
 package-lock.json
 
 # Test / tooling caches
+tests/
 .pytest_cache/
 
 # Per-project UI prefs (written at runtime)

@@ -114,6 +114,8 @@ def load_sample_metadata(
             raw = json.loads(Path(dataset_json).read_text(encoding="utf-8"))
             samples = raw if isinstance(raw, list) else raw.get("samples", [])
             for s in samples:
+                # Coerce nullable fields so None/null doesn't leak downstream
+                s["duration"] = int(s.get("duration") or 0)
                 # Primary key: explicit filename field
                 fname = s.get("filename", "")
                 if fname:
