@@ -45,7 +45,7 @@ echo -e "${CYAN}  ███████ ██ ██   ██ █████  
 echo -e "${CYAN}       ██ ██ ██   ██ ██                 ██    ██    ██      ██${NC}"
 echo -e "${CYAN}  ███████ ██ ██████  ███████       ███████    ██    ███████ ██${NC}"
 echo ""
-echo -e "  ${GREEN}Installer (v1.1.0)${NC}"
+echo -e "  ${GREEN}Installer (v1.1.0-beta)${NC}"
 echo ""
 
 # ── Pre-flight ──────────────────────────────────────────────────────

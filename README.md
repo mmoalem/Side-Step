@@ -13,11 +13,11 @@
 **Standalone training toolkit for ACE-Step 1.5 audio generation models.**
 Takes you from raw audio files to a working adapter without the friction. Variant-aware multi-adapter fine-tuning (LoRA, DoRA, LoKR, LoHA, OFT) with auto-detection, low-VRAM support, and three ways to work.
 
-> **Status:** v1.1.0 -- Stable enough for daily use. Some features are still experimental. This is maintained by one person only; if you encounter an issue, please let me know in the issues tab.
+> **Status:** v1.1.0-beta -- Stable enough for daily use. Some features are still experimental. This is maintained by one person only; if you encounter an issue, please let me know in the issues tab.
 
 ## Why Side-Step?
 
-Side-Step auto-detects your model variant (turbo, base, or sft), selects the scientifically correct training schedule, and runs on consumer hardware down to 8 GB VRAM. Version 1.0.0 evolves it from a training script into a complete standalone software suite.
+Side-Step auto-detects your model variant (base, sft, or turbo), selects the scientifically correct training schedule, and runs on consumer hardware down to 8 GB VRAM. Version 1.1.0 adds cruise control training, a completely overhauled captioning pipeline, and polished presets — building on the full standalone suite introduced in 1.0.0.
 
 ### What was already here
 
@@ -43,6 +43,18 @@ Side-Step auto-detects your model variant (turbo, base, or sft), selects the sci
 - **Run History** -- Persistent log of past training runs with best loss, adapter path, and hyperparameters.
 - **Tag Management** -- Bulk add/remove trigger tags and convert legacy sidecar formats.
 - **Cross-Platform Entry Point** -- `sidestep` (or `uv run sidestep` if not on PATH) works on all platforms.
+
+### New in 1.1.0
+
+- **Cruise Control (Target Loss)** -- Set a target loss value and Side-Step automatically damps the learning rate as training approaches it, holding the model at a sweet spot instead of over-fitting past it. EMA-smoothed loss signal, configurable warmup and floor. Works with all schedulers (conflict guards for Prodigy and cosine restarts). Resumes cleanly from checkpoints.
+- **Caption System Overhaul** -- Richer song-focused prompts that emphasize audible content over generic descriptions. Configurable generation parameters (temperature, top_p, penalties). Structured response parsing extracts genre, BPM, key, and time signature alongside the caption. Google Search grounding for Gemini. Lossless audio auto-converted to MP3 before upload to save bandwidth.
+- **Local Captioner Rewrite** -- Qwen2.5-Omni local captioner rebuilt with tiered VRAM configs, OOM recovery (retries with reduced token count), CPU offload option, audio transcoding fallback, cancellation support, and timing logs.
+- **Default Model Variant: Base** -- Base is now the recommended default everywhere (CLI, GUI, wizard, TUI, presets). Turbo remains available but is no longer the automatic first choice. Model variant dropdown auto-selects base > sft > turbo based on what's available in your checkpoint directory.
+- **Preset Revamp** -- All 7 built-in presets fleshed out with complete field coverage (adapter type, cruise control, checkpointing ratio, etc.). Presets now display adapter type, rank, LR, and epochs in the selection card. Type coercion fixes presets saved with numbers as strings.
+- **Encoding Error Resilience** -- Genius, Gemini, and OpenAI providers now detect encoding errors (including errors wrapped by SDK exception types) and bail immediately instead of retrying 3× on deterministic failures. Saves ~70 seconds per batch when processing songs with non-ASCII titles.
+- **Linux Desktop Integration** -- `.desktop` file and icon installed to XDG standard locations by the Linux installer. Side-Step appears in your application menu with its own icon.
+- **Electron Hardening** -- Navigation guard prevents blank-page crashes, renderer crash detection, DevTools shortcut (F12), native desktop notifications for training completion.
+- **Prompt Helpers Fix** -- `ask()` now correctly casts default values through `type_fn`, fixing numeric wizard defaults that were silently returned as strings.
 
 ---
 
@@ -81,7 +93,7 @@ Automate pipelines or bypass menus entirely. Every argument has a `(default: X)`
 ```bash
 uv run sidestep train \
     --checkpoint-dir ./checkpoints \
-    --model-variant turbo \
+    --model base \
     --dataset-dir ./my_tensors \
     --output-dir ./output/my_lora \
     --adapter-type dora \
@@ -154,7 +166,7 @@ Train an adapter on preprocessed tensors. Side-Step detects your variant and app
 ```bash
 uv run sidestep train \
     --checkpoint-dir ./checkpoints \
-    --model-variant turbo \
+    --model base \
     --dataset-dir ./my_tensors \
     --output-dir ./output/my_lora \
     --epochs 500
@@ -167,7 +179,7 @@ Find which layers matter most for your data, then allocate rank accordingly.
 ```bash
 uv run sidestep analyze \
     --checkpoint-dir ./checkpoints \
-    --model-variant turbo \
+    --model base \
     --dataset-dir ./my_tensors
 ```
 
