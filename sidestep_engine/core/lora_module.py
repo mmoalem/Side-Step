@@ -384,7 +384,7 @@ class FixedLoRAModule(nn.Module):
                     cfg_ratio=self._cfg_ratio,
                 )
             if self._adaptive_sampler is not None:
-                t, r = self._adaptive_sampler.sample(
+                t, _r = self._adaptive_sampler.sample(
                     batch_size=bsz,
                     base_sampler=sample_timesteps,
                     device=self.device,
@@ -395,7 +395,7 @@ class FixedLoRAModule(nn.Module):
                     use_meanflow=False,
                 )
             else:
-                t, r = sample_timesteps(
+                t, _r = sample_timesteps(
                     batch_size=bsz,
                     device=self.device,
                     dtype=self.dtype,

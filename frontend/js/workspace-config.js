@@ -78,6 +78,19 @@ const WorkspaceConfig = (() => {
       update();
     });
 
+    // Cross-dependency: rev-chunk reads full-crop-mode but only listens on
+    // full-max-latent-length / full-chunk-duration.  Re-fire both when the
+    // crop mode dropdown changes so the review row stays in sync.
+    const cropMode = $("full-crop-mode");
+    if (cropMode) {
+      cropMode.addEventListener("change", () => {
+        ["full-chunk-duration", "full-max-latent-length"].forEach(id => {
+          const el = $(id);
+          if (el) el.dispatchEvent(new Event("change"));
+        });
+      });
+    }
+
     const updateBatch = () => {
       const bs = parseInt($("full-batch")?.value) || 1;
       const ga = parseInt($("full-grad-accum")?.value) || 4;

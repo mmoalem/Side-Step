@@ -540,6 +540,18 @@ class TrainingConfigV2(TrainingConfig):
                 f"target_loss_floor must be > 0 and <= 1 "
                 f"(got {self.target_loss_floor})"
             )
+        if self.max_latent_length is not None and (
+            not isinstance(self.max_latent_length, int) or self.max_latent_length < 0
+        ):
+            errors.append(
+                f"max_latent_length must be None or a non-negative integer "
+                f"(got {self.max_latent_length!r})"
+            )
+        if self.crop_mode is not None and self.crop_mode not in ("full", "seconds", "latent"):
+            errors.append(
+                f"crop_mode must be None or one of 'full', 'seconds', 'latent' "
+                f"(got {self.crop_mode!r})"
+            )
         if self.target_loss_warmup < 0:
             errors.append(f"target_loss_warmup must be >= 0 (got {self.target_loss_warmup})")
         if not (0.0 < self.target_loss_smoothing < 1.0):
