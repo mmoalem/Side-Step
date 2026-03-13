@@ -59,9 +59,10 @@ Side-Step auto-detects your model variant (base, sft, or turbo), selects the sci
 
 ### New in 1.1.1
 
+- **Tensorboard-Like Monitor** -- Revamped Monitor tab to include more relevant information and better data representation, paired with Tensorboard style and Side-Step's design language.
 - **Music Flamingo Provider** -- Use Music Flamingo as a metadata and/or lyrics provider. Supports local servers via configurable URL and remote Hugging Face endpoints with token authentication.
 - **Transcriber Server Provider** -- Dedicated lyrics provider backed by a configurable Transcriber Server URL. Nested response parsing, multipart transport, and automatic fallback handling.
-- **Batched Caption Jobs** -- The GUI, Wizard, and CLI now run caption generation as batched jobs. Multiple audio files are queued and processed in sequence with per-file progress, automatic retries, and cancellation support. No more one-at-a-time blocking.
+- **Batched Caption Jobs** -- The GUI now runs caption generation as batched jobs. Multiple audio files are queued and processed in sequence with per-file progress, automatic retries, and cancellation support. No more one-at-a-time blocking. (Technically there since 1.0 but updated the readme to reflect the changes)
 - **Overwrite-Lyrics-Only Mode** -- Update only the lyrics field in existing sidecars without touching the rest of the metadata. Useful when re-running lyrics with a different provider.
 - **Explicit Sequence Crop Controls** -- Choose between full sample, chunk by seconds, or max latent length. Backend, presets, UI, and VRAM estimation all support the new modes.
 - **Turbo Training Overhaul** -- Replaced the old discrete 8-step Turbo schedule with continuous logit-normal timestep sampling and re-enabled CFG dropout. Turbo LoRA training now follows a proper training-oriented distribution.
@@ -289,4 +290,8 @@ See `sidestep_documentation/` for detailed guides:
 
 Contributions are always welcome. The inherent novelty of Audio Transformer-Based Diffusion makes these scripts fresh, and your contributions help every one of us. Open an issue, send a PR, or just share your results.
 
+---
+## Contrubutors
+
 Massive shoutout to [Signorlimone](https://github.com/Signorlimone) for designing and compositing the Side-Step logo.
+Amazing work done by @robustini in the training pipeline and lovely optiimizations
