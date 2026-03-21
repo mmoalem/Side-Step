@@ -536,7 +536,6 @@ def resume_checkpoint(
     strict = getattr(cfg, "strict_resume", True)
     assert module is not None
     ckpt_dir = Path(resume_path)
-
     if ckpt_dir.is_file():
         logger.info(
             "resume_from points to a file (%s) -- using parent directory %s",
@@ -692,7 +691,37 @@ def resume_checkpoint(
             decoder = module.model.decoder
             if hasattr(decoder, "_forward_module"):
                 decoder = decoder._forward_module
-            decoder.load_state_dict(state_dict, strict=False)
+
+            # PEFT's save_pretrained strips the adapter name ('.default.')
+            # from keys, so raw load_state_dict silently matches 0 keys.
+            # Use PEFT's own loader which handles the key remapping.
+            loaded_via_peft = False
+            try:
+                from peft import set_peft_model_state_dict
+                set_peft_model_state_dict(decoder, state_dict)
+                loaded_via_peft = True
+            except Exception as exc:
+                logger.debug("PEFT set_peft_model_state_dict failed (%s), trying manual remap", exc)
+
+            if not loaded_via_peft:
+                # Fallback: manually re-insert '.default.' into LoRA keys
+                remapped = {}
+                for k, v in state_dict.items():
+                    if ".lora_A." in k and ".lora_A.default." not in k:
+                        k = k.replace(".lora_A.", ".lora_A.default.")
+                    elif ".lora_B." in k and ".lora_B.default." not in k:
+                        k = k.replace(".lora_B.", ".lora_B.default.")
+                    elif ".lora_embedding_A" in k and ".lora_embedding_A.default" not in k:
+                        k = k.replace(".lora_embedding_A", ".lora_embedding_A.default")
+                    elif ".lora_embedding_B" in k and ".lora_embedding_B.default" not in k:
+                        k = k.replace(".lora_embedding_B", ".lora_embedding_B.default")
+                    remapped[k] = v
+                info = decoder.load_state_dict(remapped, strict=False)
+                if info.unexpected_keys:
+                    logger.warning(
+                        "[WARN] %d unexpected keys during adapter resume (first 3: %s)",
+                        len(info.unexpected_keys), info.unexpected_keys[:3],
+                    )
 
             start_epoch = ckpt_info["epoch"]
             g_step = ckpt_info["global_step"]
