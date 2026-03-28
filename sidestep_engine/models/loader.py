@@ -344,6 +344,10 @@ def cleanup_preprocessing_models(models: Dict[str, Any]) -> None:
     gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
+    elif torch.mps.is_available():
+        torch.mps.empty_cache()
+    elif torch.xpu.is_available():
+        torch.xpu.is_available()
     logger.info("[OK] Preprocessing models cleaned up")
 
 
@@ -505,4 +509,8 @@ def unload_models(*models: Any) -> None:
     gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
+    elif torch.mps.is_available():
+        torch.mps.empty_cache()
+    elif torch.xpu.is_available():
+        torch.xpu.is_available()
     logger.info("[OK] Models unloaded and GPU cache cleared")

@@ -452,6 +452,10 @@ def _pass1_light(
                 del lyric_hs, lyric_mask
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
+                elif torch.mps.is_available():
+                    torch.mps.empty_cache()
+                elif torch.xpu.is_available():
+                    torch.xpu.is_available()
 
                 intermediates.append(tmp_path)
                 logger.debug("[Side-Step] Pass 1 OK: %s", af.name)
@@ -460,6 +464,8 @@ def _pass1_light(
 
             except Exception as exc:
                 failed += 1
+                print(exc)
+                import pdb; pdb.set_trace()
                 logger.error("[Side-Step] Pass 1 FAIL %s: %s", af.name, exc)
 
     finally:
@@ -592,6 +598,10 @@ def _pass2_heavy(
                 del encoder_hs, encoder_mask, context_latents, data
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
+                elif torch.mps.is_available():
+                    torch.mps.empty_cache()
+                elif torch.xpu.is_available():
+                    torch.xpu.is_available()
 
                 # Remove intermediate
                 tmp_path.unlink(missing_ok=True)
