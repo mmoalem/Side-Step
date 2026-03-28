@@ -598,10 +598,10 @@ def _pass2_heavy(
                 del encoder_hs, encoder_mask, context_latents, data
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
-                elif torch.mps.is_available():
+                elif hasattr(torch, 'mps') and torch.mps.is_available():
                     torch.mps.empty_cache()
-                elif torch.xpu.is_available():
-                    torch.xpu.is_available()
+                elif hasattr(torch, 'xpu') and torch.xpu.is_available():
+                    torch.xpu.empty_cache()
 
                 # Remove intermediate
                 tmp_path.unlink(missing_ok=True)
