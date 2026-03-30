@@ -2,8 +2,7 @@
 FixedLoRATrainer -- Orchestration for ACE-Step V2 adapter fine-tuning.
 
 The actual per-step training logic lives in ``fixed_lora_module.py``
-(``FixedLoRAModule``).  The non-Fabric fallback loop lives in
-``trainer_basic_loop.py``.  Checkpoint, memory, and verification helpers
+(``FixedLoRAModule``).  Checkpoint, memory, and verification helpers
 live in ``trainer_helpers.py``.
 
 Supports both adapter types:
@@ -46,7 +45,6 @@ from sidestep_engine.core.lora_module import (
     FixedLoRAModule,
     _normalize_device_type,
     _select_compute_dtype,
-    _select_fabric_precision,
 )
 from sidestep_engine.core.trainer_helpers import (
     capture_rng_state,
@@ -61,8 +59,6 @@ from sidestep_engine.core.trainer_helpers import (
     save_on_early_exit,
     verify_saved_adapter,
 )
-from sidestep_engine.core.trainer_loop import run_basic_training_loop
-
 logger = logging.getLogger(__name__)
 
 
@@ -71,8 +67,8 @@ def _collect_trainable_params(
 ) -> list[torch.nn.Parameter]:
     """Collect trainable params with LyCORIS fallback.
 
-    When Fabric wraps the model, LoKR/LoHA params injected via LyCORIS may
-    not appear in ``model.parameters()``.  Fall back to the LyCORIS network
+    LyCORIS-injected params may not appear in ``model.parameters()``
+    depending on the wrapper chain.  Fall back to the LyCORIS network
     directly so the optimizer always receives the correct parameter list.
     """
     params = [p for p in model.parameters() if p.requires_grad]
@@ -101,17 +97,6 @@ def _collect_trainable_params(
     return list({id(p): p for p in fallback}.values())
 
 
-# Try to import Lightning Fabric
-try:
-    from lightning.fabric import Fabric
-    from lightning.fabric.strategies import SingleDeviceStrategy
-
-    _FABRIC_AVAILABLE = True
-except ImportError:
-    _FABRIC_AVAILABLE = False
-    logger.warning("[WARN] Lightning Fabric not installed. Training will use basic loop.")
-
-
 # ===========================================================================
 # FixedLoRATrainer -- orchestration
 # ===========================================================================
@@ -120,8 +105,7 @@ class FixedLoRATrainer:
     """High-level trainer for corrected ACE-Step adapter fine-tuning.
 
     Supports both LoRA (PEFT) and LoKR (LyCORIS) adapters.
-    Uses Lightning Fabric for mixed precision and gradient scaling.
-    Falls back to a basic PyTorch loop when Fabric is not installed.
+    Uses pure PyTorch with bf16-true precision.
     """
 
     def __init__(
@@ -139,7 +123,6 @@ class FixedLoRATrainer:
         self.lora_config = adapter_config
 
         self.module: Optional[FixedLoRAModule] = None
-        self.fabric: Optional[Any] = None
         self.is_training = False
 
     # ------------------------------------------------------------------
@@ -255,11 +238,8 @@ class FixedLoRATrainer:
 
             yield TrainingUpdate(0, 0.0, f"[OK] Loaded {len(data_module.train_dataset)} preprocessed samples", kind="info")
 
-            # -- Dispatch to Fabric or basic loop ---------------------------
-            if _FABRIC_AVAILABLE:
-                yield from self._train_fabric(data_module, training_state)
-            else:
-                yield from run_basic_training_loop(self, data_module, training_state)
+            # -- Training loop ----------------------------------------------
+            yield from self._train_loop(data_module, training_state)
 
         except Exception as exc:
             logger.exception("Training failed")
@@ -309,10 +289,10 @@ class FixedLoRATrainer:
         return (yield from resume_checkpoint(self, resume_path, optimizer, scheduler))
 
     # ------------------------------------------------------------------
-    # Fabric training loop
+    # Training loop
     # ------------------------------------------------------------------
 
-    def _train_fabric(
+    def _train_loop(
         self,
         data_module: PreprocessedDataModule,
         training_state: Optional[Dict[str, Any]],
@@ -327,24 +307,12 @@ class FixedLoRATrainer:
         _pw = ProgressWriter(output_dir)
 
         device_type = self.module.device_type
-        precision = _select_fabric_precision(device_type)
 
-        # -- Fabric init ----------------------------------------------------
-        # Use SingleDeviceStrategy to target the exact device the model is
-        # already on.  Fabric(devices=1) always resolves to cuda:0 even
-        # after torch.cuda.set_device(), and devices=[idx] triggers a
-        # DistributedSampler on Windows that yields 0 batches.
-        fabric_device = self.module.device
+        # -- Device setup ---------------------------------------------------
         if device_type == "cuda":
-            torch.cuda.set_device(fabric_device)
+            torch.cuda.set_device(self.module.device)
 
-        self.fabric = Fabric(
-            strategy=SingleDeviceStrategy(device=fabric_device),
-            precision=precision,
-        )
-        self.fabric.launch()
-
-        yield TrainingUpdate(0, 0.0, f"[INFO] Starting training (device: {device_type}, precision: {precision})", kind="info")
+        yield TrainingUpdate(0, 0.0, f"[INFO] Starting training (device: {device_type}, precision: bf16-true)", kind="info")
 
         # -- TensorBoard logger ---------------------------------------------
         tb = TrainingLogger(cfg.effective_log_dir)
@@ -523,9 +491,8 @@ class FixedLoRATrainer:
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
 
-        # -- dtype / Fabric setup -------------------------------------------
+        # -- dtype setup ----------------------------------------------------
         self.module.model = self.module.model.to(self.module.dtype)
-        self.module.model.decoder, optimizer = self.fabric.setup(self.module.model.decoder, optimizer)
 
         # -- Resume ---------------------------------------------------------
         start_epoch = 0
@@ -748,14 +715,14 @@ class FixedLoRATrainer:
                 consecutive_nan = 0
 
                 loss = loss / cfg.gradient_accumulation_steps
-                self.fabric.backward(loss)
+                loss.backward()
                 accumulated_loss += loss.item()
                 del loss
                 accumulation_step += 1
 
                 if accumulation_step >= cfg.gradient_accumulation_steps:
-                    self.fabric.clip_gradients(
-                        self.module.model.decoder, optimizer, max_norm=cfg.max_grad_norm,
+                    torch.nn.utils.clip_grad_norm_(
+                        trainable_params, max_norm=cfg.max_grad_norm,
                     )
                     optimizer.step()
                     # Restore un-damped LR so scheduler.step() sees the pure value,
@@ -926,8 +893,8 @@ class FixedLoRATrainer:
 
             # Flush remainder
             if accumulation_step > 0:
-                self.fabric.clip_gradients(
-                    self.module.model.decoder, optimizer, max_norm=cfg.max_grad_norm,
+                torch.nn.utils.clip_grad_norm_(
+                    trainable_params, max_norm=cfg.max_grad_norm,
                 )
                 optimizer.step()
                 # Restore un-damped LR so scheduler.step() sees the pure value

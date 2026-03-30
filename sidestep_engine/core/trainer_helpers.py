@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 def iter_module_wrappers(module: nn.Module) -> list:
-    """Collect wrapper-chain modules (Fabric/PEFT/compile wrappers).
+    """Collect wrapper-chain modules (PEFT/compile wrappers).
 
     Walks ``_forward_module``, ``_orig_mod``, ``base_model``, ``model``,
     and ``module`` attributes to find all wrapped layers.  Ported from

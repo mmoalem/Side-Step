@@ -49,7 +49,7 @@ def inject_oft_into_dit(
 
     decoder = model.decoder
 
-    # Unwrap any existing PEFT/Fabric wrappers.
+    # Unwrap any existing PEFT wrappers.
     while hasattr(decoder, "_forward_module"):
         decoder = decoder._forward_module
     if hasattr(decoder, "base_model"):

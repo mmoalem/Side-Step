@@ -45,6 +45,11 @@ def run_validation_epoch(
     if hasattr(module, "model") and hasattr(module.model, "decoder"):
         module.model.decoder.eval()
 
+    # Prevent training_step from updating mutable training state
+    # (adaptive sampler, EMA, timestep buffer, metrics, loss history).
+    _had_eval = getattr(module, "_eval_mode", False)
+    module._eval_mode = True
+
     try:
         with torch.no_grad():
             for batch in val_loader:
@@ -60,6 +65,7 @@ def run_validation_epoch(
                 total_loss += loss.item()
                 n_batches += 1
     finally:
+        module._eval_mode = _had_eval
         if hasattr(module, "model") and hasattr(module.model, "decoder"):
             if was_training:
                 module.model.decoder.train()

@@ -70,7 +70,7 @@ def detect_gpu(requested_device: str = "auto", requested_precision: str = "auto"
     else:
         device_type = requested_device.split(":")[0]
         # Bare "cuda" or "xpu" without index → append ":0" so
-        # torch.device() / Fabric always gets an explicit ordinal.
+        # torch.device() always gets an explicit ordinal.
         if device_type in ("cuda", "xpu") and ":" not in requested_device:
             device_str = f"{device_type}:0"
         else:

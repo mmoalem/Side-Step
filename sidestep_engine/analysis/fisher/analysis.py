@@ -271,7 +271,7 @@ def run_fisher_analysis(
         torch.cuda.empty_cache()
 
     # Enable gradient checkpointing -- critical for VRAM.
-    # Try multiple approaches since the bare model (no PEFT/Fabric wrappers)
+    # Try multiple approaches since the bare model (no PEFT wrappers)
     # may not respond to the wrapper-aware configure_memory_features().
     ckpt_ok = False
     decoder = model.decoder

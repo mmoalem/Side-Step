@@ -42,11 +42,6 @@ _SUGGESTIONS: dict[str, list[str]] = {
     "PeftModel": [
         "Install PEFT:  pip install peft",
     ],
-    # Fabric
-    "lightning": [
-        "Install Lightning Fabric:  pip install lightning",
-        "Or the trainer will fall back to a basic PyTorch loop",
-    ],
     # Flash attention
     "flash_attn": [
         "Flash Attention 2 is optional. The model will fall back to SDPA",

@@ -52,7 +52,7 @@ def inject_lora_into_dit(
         raise ImportError("PEFT library is required for LoRA training. Install with: pip install peft")
 
     # Get the decoder (DiT model). Previous failed training runs may leave
-    # Fabric/PEFT wrappers attached; unwrap to a clean base module first.
+    # PEFT wrappers attached; unwrap to a clean base module first.
     decoder = model.decoder
     while hasattr(decoder, "_forward_module"):
         decoder = decoder._forward_module
@@ -167,12 +167,11 @@ def inject_lora_into_dit(
 
 
 def _unwrap_decoder(model):
-    """Unwrap Fabric / PEFT wrappers to reach the real PEFT-injected decoder.
+    """Unwrap PEFT wrappers to reach the real PEFT-injected decoder.
 
-    During training, ``Fabric.setup()`` wraps the decoder in a
-    ``_FabricModule``.  Calling ``save_pretrained`` on the wrapper
-    instead of the real PEFT model produces empty or corrupted
-    safetensors files.  This helper peels the wrapper(s) off.
+    Calling ``save_pretrained`` on a wrapper instead of the real PEFT
+    model produces empty or corrupted safetensors files.  This helper
+    peels the wrapper(s) off.
     """
     decoder = model.decoder if hasattr(model, "decoder") else model
     while hasattr(decoder, "_forward_module"):
@@ -223,7 +222,7 @@ def save_lora_weights(
         )
     os.makedirs(output_dir, exist_ok=True)
 
-    # Unwrap Fabric wrapper so PEFT's save_pretrained sees the real model
+    # Unwrap any wrappers so PEFT's save_pretrained sees the real model
     decoder = _unwrap_decoder(model)
 
     if hasattr(decoder, 'save_pretrained'):

@@ -1,11 +1,10 @@
 """
-Basic (non-Fabric) training loop for FixedLoRATrainer.
+Legacy basic training loop for FixedLoRATrainer.
 
-Extracted from ``FixedLoRATrainer._train_basic`` to keep
-``trainer_fixed.py`` under the LOC limit.  This module provides a single
-generator function that yields ``TrainingUpdate`` objects exactly like
-the Fabric loop, but uses manual ``loss.backward()`` and
-``torch.nn.utils.clip_grad_norm_`` instead of Fabric wrappers.
+**NOTE**: This module is no longer used.  The main training loop in
+``trainer.py`` now uses raw PyTorch directly (``loss.backward()`` and
+``torch.nn.utils.clip_grad_norm_``) after the Fabric removal.  This
+file is kept as reference only.
 """
 
 from __future__ import annotations

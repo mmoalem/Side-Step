@@ -603,14 +603,23 @@ class PreprocessedDataModule(LightningDataModule if LIGHTNING_AVAILABLE else obj
         self.val_dataset = None
 
     def setup(self, stage: Optional[str] = None):
-        """Setup datasets."""
+        """Setup datasets.
+
+        When ``val_split > 0``, the split is performed on *unique* samples
+        (``dataset_repeats=1``) so that no sample appears in both the
+        training and validation sets.  Repeats are then applied only to
+        the training subset via ``ConcatDataset``.
+        """
         if stage == 'fit' or stage is None:
+            # When splitting, build on unique samples first to prevent
+            # duplicated samples from leaking into both train and val.
+            _repeats_for_build = 1 if (self.val_split > 0 and self.dataset_repeats > 1) else self.dataset_repeats
             full_dataset = PreprocessedTensorDataset(
                 self.tensor_dir,
                 chunk_duration=self.chunk_duration,
                 max_latent_length=self.max_latent_length,
                 chunk_decay_every=self.chunk_decay_every,
-                dataset_repeats=self.dataset_repeats,
+                dataset_repeats=_repeats_for_build,
                 genre_ratio=self.genre_ratio,
             )
 
@@ -618,9 +627,21 @@ class PreprocessedDataModule(LightningDataModule if LIGHTNING_AVAILABLE else obj
                 n_val = max(1, int(len(full_dataset) * self.val_split))
                 n_train = len(full_dataset) - n_val
 
-                self.train_dataset, self.val_dataset = torch.utils.data.random_split(
+                train_split, self.val_dataset = torch.utils.data.random_split(
                     full_dataset, [n_train, n_val]
                 )
+
+                # Apply dataset_repeats only to the training subset
+                if self.dataset_repeats > 1:
+                    self.train_dataset = torch.utils.data.ConcatDataset(
+                        [train_split] * self.dataset_repeats
+                    )
+                    logger.info(
+                        "dataset_repeats=%d applied after split: %d train (%d unique), %d val",
+                        self.dataset_repeats, len(self.train_dataset), n_train, n_val,
+                    )
+                else:
+                    self.train_dataset = train_split
             else:
                 self.train_dataset = full_dataset
                 self.val_dataset = None
